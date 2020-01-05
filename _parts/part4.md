@@ -1,5 +1,5 @@
 ---
-title: Part 4 - Our First Tests (and Bugs)
+title: Части 4 - Наши первые тесты (и баги)
 date: 2017-09-03
 ---
 
@@ -51,7 +51,7 @@ Finished in 0.00871 seconds (files took 0.09506 seconds to load)
 1 example, 0 failures
 ```
 
-Now it's feasible to test inserting a large number of rows into the database:
+Теперь возможно протестировать вставку большого числа строк в базу данных:
 ```ruby
 it 'prints error message when table is full' do
   script = (1..1401).map do |i|
@@ -63,7 +63,7 @@ it 'prints error message when table is full' do
 end
 ```
 
-Running tests again...
+Прогоняем тесты...
 ```command-line
 bundle exec rspec
 ..
@@ -72,7 +72,7 @@ Finished in 0.01553 seconds (files took 0.08156 seconds to load)
 2 examples, 0 failures
 ```
 
-Sweet, it works! Our db can hold 1400 rows right now because we set the maximum number of pages to 100, and 14 rows can fit in a page.
+Sweet, it works! Наша БД может хранить только 1400 строк, потому что мы установили максимальное число страниц, равное 100, на каждой из которых помещается 14 строк.
 
 Reading through the code we have so far, I realized we might not handle storing text fields correctly. Easy to test with this example:
 ```ruby
@@ -94,7 +94,7 @@ it 'allows inserting strings that are the maximum length' do
 end
 ```
 
-And the test fails!
+И тесты падают!
 ```ruby
 Failures:
 
@@ -300,9 +300,9 @@ end
 
 Alright, that's enough testing for now. Next is a very important feature: persistence! We're going to save our database to a file and read it back out again.
 
-It's gonna be great.
+Это будет здорово.
 
-Here's the complete diff for this part:
+Вот полный дифф из этой части:
 ```diff
 @@ -22,6 +22,8 @@
 
@@ -386,7 +386,7 @@ Here's the complete diff for this part:
  	printf("Syntax error. Could not parse statement.\n");
  	continue;
 ```
-And we added tests:
+И наши добавленные тесты:
 ```diff
 +describe 'database' do
 +  def run_script(commands)

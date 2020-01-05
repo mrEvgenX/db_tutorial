@@ -1,23 +1,23 @@
 ---
-title: How Does a Database Work?
+title: Как работает база данных?
 ---
 
-- What format is data saved in? (in memory and on disk)
-- When does it move from memory to disk?
-- Why can there only be one primary key per table?
-- How does rolling back a transaction work?
-- How are indexes formatted?
-- When and how does a full table scan happen?
-- What format is a prepared statement saved in?
+- В каком формате сохранены данные? (в памяти или на диске)
+- Когда они переносятся из памяти на диск?
+- Почему у таблицы может быть только один первичный ключ?
+- Как откатывается транзакция?
+- Какой формат у индексов?
+- Когда и как происходит полное считывание таблицы?
+- В каком формате сохраняются prepared statement'ы?
 
-In short, how does a database **work**?
+Короче, как **работает** база данных?
 
-I'm building a clone of [sqlite](https://www.sqlite.org/arch.html) from scratch in C in order to understand, and I'm going to document my process as I go.
+Я разрабатываю клон [sqlite](https://www.sqlite.org/arch.html) с нуля на C, чтобы понять и я собираюсь документировать свой процесс по мере продвижения вперед.
 
-# Table of Contents
+# Оглавление
 {% for part in site.parts %}- [{{part.title}}]({{site.baseurl}}{{part.url}})
 {% endfor %}
 
-> "What I cannot create, I do not understand." -- [Richard Feynman](https://en.m.wikiquote.org/wiki/Richard_Feynman)
+> "Чего не могу воссоздать, того не понимаю." -- [Richard Feynman](https://ru.m.wikiquote.org/wiki/Ричард_Фейнман)
 
-{% include image.html url="assets/images/arch2.gif" description="sqlite architecture (https://www.sqlite.org/arch.html)" %}
+{% include image.html url="assets/images/arch2.gif" description="Архитектура sqlite (https://www.sqlite.org/arch.html)" %}

@@ -1,19 +1,19 @@
 ---
-title: Part 2 - World's Simplest SQL Compiler and Virtual Machine
+title: Часть 2 - Простейший компилятор SQL и виртуальная машина
 date: 2017-08-31
 ---
 
-We're making a clone of sqlite. The "front-end" of sqlite is a SQL compiler that parses a string and outputs an internal representation called bytecode.
+Мы создаем клон sqlite. "Фронтенд" для sqlite - это компилятор SQL, который разбирает строку и выдает внутреннее представление, которое называется байт-код.
 
-This bytecode is passed to the virtual machine, which executes it.
+Этот байт-код передается на исполнение виртуальной машине.
 
 {% include image.html url="assets/images/arch2.gif" description="SQLite Architecture (https://www.sqlite.org/arch.html)" %}
 
-Breaking things into two steps like this has a couple advantages:
-- Reduces the complexity of each part (e.g. virtual machine does not worry about syntax errors)
-- Allows compiling common queries once and caching the bytecode for improved performance
+Разделение процесса на два шага имеет пару преимуществ:
+- Уменьшение сложности каждого из шагов (например, виртуальная машину не заботят синтаксические ошибки)
+- Можно позволить себе компилировать запросы один раз и сохранять байт-код в кэше для улучшения производительности
 
-With this in mind, let's refactor our `main` function and support two new keywords in the process:
+Принимая это во внимание, давайте отрефакторим нашу функцию `main` и добавим поддержку двух новых ключевых слов:
 
 ```diff
  int main(int argc, char* argv[]) {
@@ -52,13 +52,13 @@ With this in mind, let's refactor our `main` function and support two new keywor
  }
 ```
 
-Non-SQL statements like `.exit` are called "meta-commands". They all start with a dot, so we check for them and handle them in a separate function.
+Не-SQL инструкции, вроде `.exit`, называеются "мета-командами". Все они начинаются с точки, таким образом, мы проверяем их и обрабатываем в отдельной функции.
 
-Next, we add a step that converts the line of input into our internal representation of a statement. This is our hacky version of the sqlite front-end.
+Потом, мы добавляем шаг, на котором мы преобразуем строчку ввода во внутреннее представление инструкции. Это наша наколеночная версия фронтенда sqlite.
 
-Lastly, we pass the prepared statement to `execute_statement`. This function will eventually become our virtual machine.
+Наконец, мы передаем нашу подготовленную инструкцию в `execute_statement`. Эта функция в конечном итоге станет нашей виртуальной машиной.
 
-Notice that two of our new functions return enums indicating success or failure:
+Обратите внимание, что две из наших фукнций возвращают перечисления, которые указывают на успех или неудачу:
 
 ```c
 typedef enum {
@@ -69,9 +69,9 @@ typedef enum {
 typedef enum { PREPARE_SUCCESS, PREPARE_UNRECOGNIZED_STATEMENT } PrepareResult;
 ```
 
-"Unrecognized statement"? That seems a bit like an exception. But [exceptions are bad](https://www.youtube.com/watch?v=EVhCUSgNbzo) (and C doesn't even support them), so I'm using enum result codes wherever practical. The C compiler will complain if my switch statement doesn't handle a member of the enum, so we can feel a little more confident we handle every result of a function. Expect more result codes to be added in the future.
+"Unrecognized statement"? Это немного похоже на исключение. Но [исключения - это плохо](https://www.youtube.com/watch?v=EVhCUSgNbzo) (и C даже не поддерживает их), поэтому я использую коды ошибок в перечислениях всезде, где это кажется практичным. Компилятор языка C will complain if my switch statement doesn't handle a member of the enum, so we can feel a little more confident we handle every result of a function. Ожидается, что в будущем появятся новые коды.
 
-`do_meta_command` is just a wrapper for existing functionality that leaves room for more commands:
+`do_meta_command` просто обертка над существующей функциональностью, которая оставляет нам место для добавления еще большего числа команд:
 
 ```c
 MetaCommandResult do_meta_command(InputBuffer* input_buffer) {
@@ -83,7 +83,7 @@ MetaCommandResult do_meta_command(InputBuffer* input_buffer) {
 }
 ```
 
-Our "prepared statement" right now just contains an enum with two possible values. It will contain more data as we allow parameters in statements:
+Наши "prepared statement" прямо сейчас просто содержат перечисление с двумя возможными значениями. Они будут содержать больше данных, как только добавим параметры в запросах:
 
 ```c
 typedef enum { STATEMENT_INSERT, STATEMENT_SELECT } StatementType;
@@ -93,7 +93,7 @@ typedef struct {
 } Statement;
 ```
 
-`prepare_statement` (our "SQL Compiler") does not understand SQL right now. In fact, it only understands two words:
+`prepare_statement` (наш "SQL компилятор") прямо сейчас не понимает ситнаксис SQL. По факту, он только понимает два слова:
 ```c
 PrepareResult prepare_statement(InputBuffer* input_buffer,
                                 Statement* statement) {
@@ -110,9 +110,9 @@ PrepareResult prepare_statement(InputBuffer* input_buffer,
 }
 ```
 
-Note that we use `strncmp` for "insert" since the "insert" keyword will be followed by data. (e.g. `insert 1 cstack foo@bar.com`)
+Отметим использование `strncmp` для "insert", ведь за ключевым словом "insert" будут следовать данные. (например `insert 1 cstack foo@bar.com`)
 
-Lastly, `execute_statement` contains a few stubs:
+И вот, ставим в `execute_statement` пару заглушек:
 ```c
 void execute_statement(Statement* statement) {
   switch (statement->type) {
@@ -127,8 +127,9 @@ void execute_statement(Statement* statement) {
 ```
 
 Note that it doesn't return any error codes because there's nothing that could go wrong yet.
+Примечательно, что функция пока ничего не возвращает, потому что здесь пока нечему пойти не так.
 
-With these refactors, we now recognize two new keywords!
+С проведенным рефакторингом теперь мы понимаем два новых ключевых слова!
 ```command-line
 ~ ./db
 db > insert foo bar
@@ -145,7 +146,7 @@ db > .exit
 ~
 ```
 
-The skeleton of our database is taking shape... wouldn't it be nice if it stored data? In the next part, we'll implement `insert` and `select`, creating the world's worst data store. In the mean time, here's the entire diff from this part:
+Каркас нашей базы данных начинает принимать форму... неплохо было бы хранить в ней данные? В следующей части мы реализуем `insert` и `select`, создав худшее в мире хранилище данных. Тем временем, вот полный дифф из этой части:
 
 ```diff
 @@ -10,6 +10,23 @@ struct InputBuffer_t {

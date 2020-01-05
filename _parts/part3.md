@@ -1,15 +1,15 @@
 ---
-title: Part 3 - An In-Memory, Append-Only, Single-Table Database
+title: Часть 3 - База данных, хранящая все в памяти, в одной таблице, умеющая только добавлять данные
 date: 2017-09-01
 ---
 
-We're going to start small by putting a lot of limitations on our database. For now, it will:
+Собираемся начать с малого, наложив множество ограничений на нашу базу данных. На данный момент она будет:
 
-- support two operations: inserting a row and printing all rows
-- reside only in memory (no persistence to disk)
-- support a single, hard-coded table
+- поддерживать две операции: вставка одной строки и распечатывание всех строк
+- располагаться только в памяти без сохранения на жесткий диск
+- поддержвить одну захардкоженную таблицу.
 
-Our hard-coded table is going to store users and look like this:
+Наша захардкоженная таблица будет хранить данные пользователей и выглядеть следующим образом:
 
 | column   | type         |
 |----------|--------------|
@@ -17,15 +17,15 @@ Our hard-coded table is going to store users and look like this:
 | username | varchar(32)  |
 | email    | varchar(255) |
 
-This is a simple schema, but it gets us to support multiple data types and multiple sizes of text data types.
+Это довольно простая структура, но она заставляет нас поддержать несколько типов данных и несколько размеров тектовых полей.
 
-`insert` statements are now going to look like this:
+Выражения `insert` будут выглядеть так:
 
 ```
 insert 1 cstack foo@bar.com
 ```
 
-That means we need to upgrade our `prepare_statement` function to parse arguments
+Поэтому, нам нужно обновить логику `prepare_statement`, чтобы уметь принимать аргументы
 
 ```diff
    if (strncmp(input_buffer->buffer, "insert", 6) == 0) {
@@ -41,7 +41,8 @@ That means we need to upgrade our `prepare_statement` function to parse argument
    if (strcmp(input_buffer->buffer, "select") == 0) {
 ```
 
-We store those parsed arguments into a new `Row` data structure inside the statement object:
+Сохраняем извлеченные аргументы в новую структуру данных под названием `Row` внутри объекта инструкции:
+
 
 ```diff
 +#define COLUMN_USERNAME_SIZE 32
@@ -54,13 +55,13 @@ We store those parsed arguments into a new `Row` data structure inside the state
 +
  typedef struct {
    StatementType type;
-+  Row row_to_insert;  // only used by insert statement
++  Row row_to_insert;  // используется только для инструкций вставки
  } Statement;
 ```
 
 Now we need to copy that data into some data structure representing the table. SQLite uses a B-tree for fast lookups, inserts and deletes. We'll start with something simpler. Like a B-tree, it will group rows into pages, but instead of arranging those pages as a tree it will arrange them as an array.
 
-Here's my plan:
+Вот мой план:
 
 - Store rows in blocks of memory called pages
 - Each page stores as many rows as it can fit
@@ -68,7 +69,7 @@ Here's my plan:
 - Pages are only allocated as needed
 - Keep a fixed-size array of pointers to pages
 
-First we'll define the compact representation of a row:
+Первым делом определим компактное представление строки:
 ```diff
 +#define size_of_attribute(Struct, Attribute) sizeof(((Struct*)0)->Attribute)
 +
@@ -81,7 +82,7 @@ First we'll define the compact representation of a row:
 +const uint32_t ROW_SIZE = ID_SIZE + USERNAME_SIZE + EMAIL_SIZE;
 ```
 
-This means the layout of a serialized row will look like this:
+Теперь раскладка нашей сериализованной строки будет выглядеть так:
 
 | column   | size (bytes) | offset       |
 |----------|--------------|--------------|
@@ -90,7 +91,7 @@ This means the layout of a serialized row will look like this:
 | email    | 255          | 36           |
 | total    | 291          |              |
 
-We also need code to convert to and from the compact representation.
+Нам, также, нужен код, умеющий преобразовывать строку в компактное представление и обратно.
 ```diff
 +void serialize_row(Row* source, void* destination) {
 +  memcpy(destination + ID_OFFSET, &(source->id), ID_SIZE);
@@ -231,7 +232,7 @@ memory release function and handle a few more error cases:
  }
  ```
 
- With those changes we can actually save data in our database!
+ С этими изменениями мы по-настоящему можем сохранять данные в нашу базу данных!
  ```command-line
 ~ ./db
 db > insert 1 cstack foo@bar.com
@@ -248,11 +249,11 @@ db > .exit
 ~
 ```
 
-Now would be a great time to write some tests, for a couple reasons:
-- We're planning to dramatically change the data structure storing our table, and tests would catch regressions.
-- There are a couple edge cases we haven't tested manually (e.g. filling up the table)
+Теперь было бы отлично написать парочку тестов по следующим причинам:
+- Мы планируем кардинально менять структуру, в которой хранятся наши данные, а тесты помогут отловить регрессии.
+- Есть несколько граничных случаев, которые не протестированны руками (например, заполнение таблицы)
 
-We'll address those issues in the next part. For now, here's the complete diff from this part:
+Мы разберемся с этими проблемами в следующей части. Сейчас, вот полный дифф из этой части:
 ```diff
 @@ -2,6 +2,7 @@
  #include <stdio.h>
